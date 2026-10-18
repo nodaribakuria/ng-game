@@ -1,0 +1,51 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const elements=new Map(),events={};
+const context=new Proxy({},{get:()=>()=>{}});
+function element(id){if(!elements.has(id))elements.set(id,{style:{},innerHTML:'',addEventListener(name,fn){events[id+':'+name]=fn;},getContext(){return context;}});return elements.get(id);}
+const env={assert,console,document:{querySelector:element},window:{addEventListener(name,fn){events[name]=fn;}},Image:class{},localStorage:{getItem(){return null;}},setTimeout(){},clearTimeout(){},requestAnimationFrame(){}};
+vm.createContext(env);
+for(const f of ['game.js','combat.js','world.js','boss.js','melee-ranged.js','arsenal.js','career.js','simulation.js','scene.js','ship-art.js','weapon-art.js','planet.js','training.js','modes.js'])vm.runInContext(fs.readFileSync(f,'utf8'),env);
+env.events=events;
+vm.runInContext(`
+settings.volume=0;
+function fresh(){Object.assign(career,newCareer());start();g.next=999;g.drops=[];}
+fresh();
+assert.equal(g.magazines[0],12);assert.equal(g.reserve[0],60);
+mouse.down=true;g.fire=0;updateCombat(.01);
+assert.equal(g.magazines[0],11);assert.equal(g.bullets.length,1);
+updateCombat(.01);assert.equal(g.magazines[0],11,'fire rate limits shots');
+g.magazines[0]=0;g.fire=0;updateCombat(.01);
+assert.ok(g.reload,'empty magazine starts reload');assert.equal(g.bullets.length,1);
+updateCombat(.5);assert.equal(g.magazines[0],0,'no ammo before reload finishes');
+updateCombat(1);assert.equal(g.magazines[0],12);assert.equal(g.reserve[0],48);
+g.magazines[0]=8;g.reserve[0]=2;assert.ok(reloadWeapon());updateCombat(2);
+assert.equal(g.magazines[0],10);assert.equal(g.reserve[0],0,'partial reserve transfer');
+g.magazines[0]=0;g.fire=0;updateCombat(.1);assert.equal(g.magazines[0],0);assert.equal(g.bullets.length,1,'cannot shoot without ammo');
+fresh();g.coins=74;assert.equal(buyWeapon(1),false);assert.equal(g.coins,74);
+g.coins=200;assert.ok(buyWeapon(1));assert.equal(g.coins,125);assert.equal(g.magazines[1],30);assert.equal(g.reserve[1],60);assert.equal(g.weapon,1);
+assert.equal(buyWeapon(1),false);assert.equal(g.coins,125,'duplicate purchase rejected');
+assert.ok(buyAmmo(1));assert.equal(g.coins,101);assert.equal(g.reserve[1],120);
+g.coins=0;assert.equal(buyAmmo(1),false);assert.equal(g.reserve[1],120);
+g.magazines[1]=2;reloadWeapon();updateCombat(.5);equipWeapon(0);
+assert.equal(g.reload,null);assert.equal(g.magazines[1],2);assert.equal(g.reserve[1],120,'cancelled reload conserves ammo');
+const priorMag=g.magazines[1];acquireWeapon(1);assert.equal(g.magazines[1],priorMag);assert.equal(g.reserve[1],150,'duplicate world gun grants ammo');
+fresh();acquireWeapon(2);g.equipTime=0;g.fire=0;mouse.down=true;updateCombat(.01);
+assert.equal(g.magazines[2],5);assert.equal(g.bullets.length,5,'shotgun uses one shell for five pellets');
+fresh();g.drops=[{x:g.p.x+65,y:g.p.y,type:'scrap',value:3}];keys.clear();
+for(let i=0;i<60;i++)collectDrops(.016);
+assert.equal(g.scrap,11);assert.equal(g.drops.length,0,'bolts collected without E');
+for(let i=0;i<60;i++)collectDrops(.016);assert.equal(g.scrap,11,'pickup credited once');
+g.drops=[{x:g.p.x,y:g.p.y,type:'weapon',value:3}];collectDrops(.016);assert.ok(g.unlocked[3]);assert.equal(g.weapon,3);
+g.drops=[{x:g.p.x,y:g.p.y,type:'ammo',weapon:3,value:5},{x:g.p.x,y:g.p.y,type:'med',value:1}];collectDrops(.016);assert.equal(g.reserve[3],15);assert.equal(g.med,3);
+g.p.x=200;g.p.y=810;assert.equal(canCollect({x:200,y:680}),false,'no pickup through wall');
+fresh();let y=g.p.y;
+events.keydown({key:'წ',code:'KeyW',repeat:false,preventDefault(){}});update(.04);
+assert.ok(g.p.y<y,'physical W works with Georgian keyboard');
+events.keyup({key:'წ',code:'KeyW'});assert.equal(keys.has('w'),false);
+g.magazines[0]=3;events.keydown({key:'რ',code:'KeyR',repeat:false,preventDefault(){}});assert.ok(g.reload);
+events.keydown({key:'ი',code:'KeyI',repeat:false,preventDefault(){}});assert.equal(mode,'inventory');let elapsed=g.reload.elapsed;frame(100);assert.equal(g.reload.elapsed,elapsed,'inventory pauses reload');
+events.keydown({key:'ი',code:'KeyI',repeat:false,preventDefault(){}});assert.equal(mode,'playing');
+for(let i=0;i<weapons.length;i++){g.unlocked[i]=true;equipWeapon(i);draw();g.equipTime=0;g.magazines[i]=0;g.reserve[i]=10;reloadWeapon();updateCombat(.3);draw();g.reload=null;}
+g.drops=[{x:1500,y:900,type:'scrap',value:2},{x:1540,y:900,type:'ammo',value:4,weapon:0},{x:1580,y:900,type:'weapon',value:2},{x:1620,y:900,type:'med',value:1}];draw();
+console.log('PASS: ammunition, empty firing, timed and partial reload, cancellation, buying weapons/ammo, shotgun, automatic pickups, walls, Georgian WASD/R/I, paused reload, model render calls');
+`,env);

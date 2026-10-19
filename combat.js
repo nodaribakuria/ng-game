@@ -57,6 +57,7 @@ function reloadWeapon() {
 }
 
 function updateCombat(dt) {
+  if(typeof updateEngineerMotion==='function')updateEngineerMotion(dt);
   if(typeof mobileAim==='function')mobileAim();
   updateTurrets(dt);
   if(g.swing){g.swing.time-=dt;if(g.swing.time<=0)g.swing=null;}

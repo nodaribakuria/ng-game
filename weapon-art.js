@@ -27,29 +27,17 @@ function weaponModel(index,magOffset=0){if(index>=6){drawArsenalWeapon(index,mag
   }
 }
 
+function armJoint(shoulder,hand,bend,sleeve,skin){const dx=hand.x-shoulder.x,dy=hand.y-shoulder.y,d=Math.hypot(dx,dy)||1,bow=Math.min(14,Math.sqrt(Math.max(0,31*31-d*d/4)))*bend,elbow={x:(shoulder.x+hand.x)/2-dy/d*bow,y:(shoulder.y+hand.y)/2+dx/d*bow};line(shoulder.x,shoulder.y,elbow.x,elbow.y,sleeve,10);line(elbow.x,elbow.y,hand.x,hand.y,skin,7);}
 function drawHeldWeapon(angle,red,suit){
-  const w=weapons[g.weapon];
-  const progress=g.reload?g.reload.elapsed/g.reload.duration:0;
-  const reloadPose=g.reload?Math.sin(progress*Math.PI):0;
-  const equipPose=g.equipTime/.45;
-  const pickupPose=!g.reload&&g.flash<=0?Math.sin(g.pickupTime/.45*Math.PI):0;
-  const recoil=g.flash>0?g.flash/.065:0;
-  ctx.save();ctx.rotate(angle+reloadPose*.45+equipPose*.7+(g.swing?(1-g.swing.time/g.swing.duration)*2.2-1.1:0));
-  // Both arms attach to the torso and end on actual gun grips.
-  const gunX=21-recoil*4,gunY=reloadPose*6+equipPose*12;
-  const sleeve=red?'#d8dddd':suit,skin=red?'#dbaf94':'#deb394';
-  line(-4,-14,7,-17,sleeve,11);line(7,-17,gunX-2,gunY+8,skin,8);
-  line(-4,14,8,23,sleeve,11);
-  const reach=reloadPose*22+pickupPose*16;
-  const frontX=gunX+(g.weapon===0?6:27)-reloadPose*11;
-  const frontY=gunY+8+reach;
-  line(8,23,frontX,frontY,skin,8);
-  ctx.save();ctx.translate(gunX,gunY);weaponModel(g.weapon,reach);ctx.restore();
-  ellipse(gunX-1,gunY+9,5,5,'#263a43');ellipse(frontX,frontY,5,5,'#263a43');
-  line(frontX-2,frontY,frontX+2,frontY,'#829ba4',1.5);
-  if(g.flash>0&&!g.reload&&!w.melee){const muzzle=w.muzzle-recoil*4;poly([[muzzle,-7],[muzzle+12,-3],[muzzle+22,0],[muzzle+9,5],[muzzle,8]],'#ffdf98');}
-  if(g.swing){ctx.strokeStyle=w.color;ctx.lineWidth=5;ctx.globalAlpha=g.swing.time/g.swing.duration;ctx.beginPath();ctx.arc(0,0,w.range,-.7,.7);ctx.stroke();ctx.globalAlpha=1;}
-  ctx.restore();
+ const w=weapons[g.weapon],progress=g.reload?Math.min(1,g.reload.elapsed/g.reload.duration):0,reloadPose=g.reload?Math.sin(progress*Math.PI):0,equipPose=Math.max(0,Math.min(1,(g.equipTime||0)/.45)),pickupPose=!g.reload&&g.flash<=0?Math.sin((g.pickupTime||0)/.45*Math.PI):0,recoil=Math.max(0,Math.min(1,(g.flash||0)/.065)),flip=Math.cos(angle)<0?-1:1;
+ const rotation=angle+flip*(reloadPose*.3+equipPose*.45)+(g.swing?(1-g.swing.time/g.swing.duration)*2.2-1.1:0),gunX=21-recoil*4,gunY=reloadPose*6+equipPose*8,reach=reloadPose*16+pickupPose*8;
+ const grip=(x,y)=>({x:x*Math.cos(rotation)-y*flip*Math.sin(rotation),y:x*Math.sin(rotation)+y*flip*Math.cos(rotation)}),rear=grip(gunX-1,gunY+9),front=grip(gunX+(w.melee?12:g.weapon===0?3:22)-reloadPose*8,gunY+8+reach),sleeve=red?'#d8dddd':suit,skin=red?'#dbaf94':'#deb394';
+ // Shoulder anchors stay on the torso; only the gun and hand targets rotate.
+ armJoint({x:-14,y:-15},flip>0?front:rear,-1,sleeve,skin);armJoint({x:14,y:-15},flip>0?rear:front,1,sleeve,skin);
+ ctx.save();ctx.rotate(rotation);ctx.scale(1,flip);ctx.save();ctx.translate(gunX,gunY);weaponModel(g.weapon,reach);ctx.restore();
+ if(g.flash>0&&!g.reload&&!w.melee){const muzzle=w.muzzle-recoil*4;poly([[muzzle,-7],[muzzle+12,-3],[muzzle+22,0],[muzzle+9,5],[muzzle,8]],'#ffdf98');}
+ if(g.swing){ctx.strokeStyle=w.color;ctx.lineWidth=5;ctx.globalAlpha=g.swing.time/g.swing.duration;ctx.beginPath();ctx.arc(0,0,w.range,-.7,.7);ctx.stroke();ctx.globalAlpha=1;}ctx.restore();
+ ellipse(rear.x,rear.y,4,4,'#263a43');ellipse(front.x,front.y,4,4,'#263a43');
   if(g.reload){box(-29,52,58,5,'#192c3b');box(-29,52,58*progress,5,w.color);text('Reload',0,70,'#d3eef2',11);}
   if(g.pickupTime>0){ctx.strokeStyle='#a1e7d8';ctx.lineWidth=2;ctx.globalAlpha=g.pickupTime/.45;ctx.beginPath();ctx.ellipse(0,26,28+(1-g.pickupTime/.45)*20,12,0,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;}
 }

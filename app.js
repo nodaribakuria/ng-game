@@ -142,6 +142,7 @@ function reloadWeapon() {
 }
 
 function updateCombat(dt) {
+  if(typeof updateEngineerMotion==='function')updateEngineerMotion(dt);
   if(typeof mobileAim==='function')mobileAim();
   updateTurrets(dt);
   if(g.swing){g.swing.time-=dt;if(g.swing.time<=0)g.swing=null;}
@@ -565,7 +566,21 @@ function box(x,y,w,h,c,stroke){ctx.fillStyle=c;ctx.fillRect(x,y,w,h);if(stroke){
 function ellipse(x,y,rx,ry,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
 function line(x,y,xx,yy,c,width=3){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xx,yy);ctx.stroke();}
 function poly(points,c,stroke){ctx.fillStyle=c;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}}
-function engineer(x,y,name,phase,angle){ctx.save();ctx.translate(x,y);const red=name==='engineer-red',accent=red?'#b84343':'#ed8b32',suit=red?'#a4333d':'#252d36',hair=red?'#39251f':'#c69b50',step=Math.sin(phase)*7;ellipse(0,30,24,9,'#0008');box(-18,-18,36,44,'#121a21','#63717c');box(-21,-14,5,29,accent);box(16,-14,5,29,accent);for(const side of [-1,1]){let shift=side*step;line(side*9,12,side*11,30+shift,suit,14);box(side*11-8,25+shift,16,13,'#27343f','#566778');box(side*11-9,36+shift,20,10,'#111923');}poly([[-15,-22],[15,-22],[17,9],[-17,9]],red?'#dfe1df':'#30363b','#131d26');line(-11,-20,-7,8,accent,5);line(10,-20,8,8,accent,5);box(-19,8,38,8,'#151c23');box(-3,9,7,6,'#d9ab55');box(-20,17,8,11,accent);ellipse(0,-30,16,20,hair);ellipse(0,-30,11,15,'#e1b497');poly([[-15,-43],[0,-49],[15,-39],[9,-36],[0,-41],[-12,-30]],hair);if(!red){ellipse(5,-49,11,8,hair);}else{poly([[-14,-37],[-20,-5],[-13,0],[-10,-29]],hair);poly([[12,-36],[19,-6],[12,0],[9,-27]],hair);}ellipse(-4,-31,1.4,1.7,'#1b2631');ellipse(4,-31,1.4,1.7,'#1b2631');line(-3,-23,3,-23,'#985c52',1.4);if(red){ellipse(0,-6,7,7,'#5387b3');ellipse(-6,-8,4,5,'#5387b3');ellipse(6,-8,4,5,'#5387b3');}else box(-5,-7,10,10,'#ef9442');drawHeldWeapon(angle,red,suit);ctx.restore();}
+function updateEngineerMotion(dt){const p=g.p;if(!p.motion)p.motion={x:p.x,y:p.y,phase:0,blend:0,lean:0};const m=p.motion,dx=p.x-m.x,dy=p.y-m.y,distance=Math.hypot(dx,dy),moving=distance>.01&&distance<235*dt+5;m.x=p.x;m.y=p.y;if(moving)m.phase+=distance*.055;const ease=1-Math.exp(-dt*14);m.blend+=((moving?Math.min(1,distance/(235*dt||1)):0)-m.blend)*ease;m.lean+=((moving?dx/(235*dt||1)*.075:0)-m.lean)*ease;p.moving=moving;}
+function engineer(x,y,name,phase,angle){
+ ctx.save();ctx.translate(x,y);const red=name==='engineer-red',accent=red?'#b84343':'#ed8b32',suit=red?'#a4333d':'#252d36',hair=red?'#39251f':'#c69b50',motion=g.p.motion||{phase:0,blend:0,lean:0},step=Math.sin(motion.phase)*6*motion.blend,bob=-Math.abs(Math.cos(motion.phase))*2*motion.blend;
+ ellipse(0,35,23,8,'#0008');
+ for(const side of [-1,1]){const stride=side*step;line(side*9,12,side*11+stride*.35,27+stride*.35,suit,13);line(side*11+stride*.35,27+stride*.35,side*11+stride*.5,39+stride,suit,11);box(side*11-7+stride*.5,35+stride,17,10,'#111923');}
+ ctx.save();ctx.translate(0,bob);ctx.rotate(motion.lean);const aim=angle-motion.lean,back=Math.sin(angle)<-.3;
+ if(back)drawHeldWeapon(aim,red,suit);
+ box(-18,-18,36,37,'#121a21','#63717c');box(-21,-14,5,29,accent);box(16,-14,5,29,accent);
+ poly([[-15,-22],[15,-22],[17,9],[-17,9]],red?'#dfe1df':'#30363b','#131d26');line(-11,-20,-7,8,accent,5);line(10,-20,8,8,accent,5);box(-19,8,38,8,'#151c23');box(-3,9,7,6,'#d9ab55');box(-20,17,8,11,accent);
+ if(back){box(-12,-18,24,27,'#24313b',accent);ellipse(0,-6,6,6,'#98a1a5');}else if(red){ellipse(0,-6,7,7,'#5387b3');ellipse(-6,-8,4,5,'#5387b3');ellipse(6,-8,4,5,'#5387b3');}else box(-5,-7,10,10,'#ef9442');
+ ctx.save();ctx.translate(Math.cos(angle)*2,0);ellipse(0,-30,16,20,hair);
+ if(!back){ellipse(Math.cos(angle)*2,-30,11,15,'#e1b497');ellipse(-4+Math.cos(angle)*3,-31,1.4,1.7,'#1b2631');ellipse(4+Math.cos(angle)*3,-31,1.4,1.7,'#1b2631');line(-3,-23,3,-23,'#985c52',1.4);}
+ poly([[-15,-43],[0,-49],[15,-39],[9,-36],[0,-41],[-12,-30]],hair);if(!red)ellipse(5,-49,11,8,hair);else{poly([[-14,-37],[-20,-5],[-13,0],[-10,-29]],hair);poly([[12,-36],[19,-6],[12,0],[9,-27]],hair);}ctx.restore();
+ if(!back)drawHeldWeapon(aim,red,suit);ctx.restore();ctx.restore();
+}
 function robotModel(e){ctx.save();ctx.translate(e.x,e.y);if(e.ranged&&e.winding>0){ctx.save();ctx.rotate(Math.atan2(g.p.y-e.y,g.p.x-e.x));const t=traceWall(e.x,e.y,g.p.x,g.p.y,2),length=dist(e,g.p)*Math.min(1,t);ctx.globalAlpha=.45;line(25,0,length,0,'#ff8099',2);ctx.restore();}if(e.ranged){box(-34,-35,68,12,'#25364a','#70d6ff');ellipse(-23,-29,4,4,'#8de8ff');ellipse(23,-29,4,4,'#8de8ff');ctx.save();ctx.rotate(Math.atan2(g.p.y-e.y,g.p.x-e.x));box(12,-5,43,10,'#263447','#8ee5ff');box(46,-7,14,14,'#50778a');ctx.restore();}let step=Math.sin(g.time*7+e.x*.02)*6;ellipse(0,30,e.boss?65:27,10,'#0008');if(e.boss){ctx.scale(2.1,2.1);for(let side of [-1,1]){for(let i=0;i<3;i++){ctx.save();ctx.translate(side*(15+i*8),-36);ctx.rotate(side*(.3+i*.15));box(-5,-20,10,28,'#49242e','#ad5861');box(-3,-18,6,13,'#ff9847');ctx.restore();}line(side*17,-12,side*38,14,'#3d3242',19);poly([[side*28,-6],[side*44,8],[side*40,24],[side*24,9]],'#dd6b36','#6d3c44');}}for(const side of [-1,1]){line(side*12,7,side*14,28+side*step,'#3a4148',13);box(side*14-8,18+side*step,16,12,'#1b2631','#677584');box(side*14-11,33+side*step,24,10,'#29333c','#687280');poly([[side*14-9,43+side*step],[side*14-6,48+side*step],[side*14-3,43+side*step]],'#abb2b7');}poly([[-28,-29],[28,-29],[30,9],[-30,9]],e.boss?'#302c3e':'#3e454a','#79828c');box(-28,-13,56,5,'#202a33','#596670');for(const side of [-1,1]){poly([[side*15,-9],[side*23,-1],[side*15,7],[side*7,-1]],'#7f283b','#df5960');for(let i=0;i<3;i++)poly([[side*(10+i*7),-29],[side*(13+i*7),-43-i*3],[side*(16+i*7),-29]],'#657078','#242c36');}ellipse(0,-29,13,13,'#1b222a');ellipse(0,-29,9,9,'#a63248');line(-7,-29,7,-29,'#ff7582',1);line(0,-36,0,-22,'#ff7582',1);ellipse(-21,-23,4,4,'#ff5267');ellipse(21,-23,4,4,'#ff5267');ctx.restore();}
 function consoleUnit(x,y,color){box(x-38,y-25,76,50,'#172b3a','#566978');box(x-30,y-18,60,28,'#071b2a',color);for(let i=0;i<4;i++)line(x-24,y-12+i*6,x+8+i*4,y-12+i*6,color,2);for(let i=0;i<5;i++)box(x-25+i*12,y+16,5,3,i%2?'#f6af58':color);}
 
@@ -621,29 +636,17 @@ function weaponModel(index,magOffset=0){if(index>=6){drawArsenalWeapon(index,mag
   }
 }
 
+function armJoint(shoulder,hand,bend,sleeve,skin){const dx=hand.x-shoulder.x,dy=hand.y-shoulder.y,d=Math.hypot(dx,dy)||1,bow=Math.min(14,Math.sqrt(Math.max(0,31*31-d*d/4)))*bend,elbow={x:(shoulder.x+hand.x)/2-dy/d*bow,y:(shoulder.y+hand.y)/2+dx/d*bow};line(shoulder.x,shoulder.y,elbow.x,elbow.y,sleeve,10);line(elbow.x,elbow.y,hand.x,hand.y,skin,7);}
 function drawHeldWeapon(angle,red,suit){
-  const w=weapons[g.weapon];
-  const progress=g.reload?g.reload.elapsed/g.reload.duration:0;
-  const reloadPose=g.reload?Math.sin(progress*Math.PI):0;
-  const equipPose=g.equipTime/.45;
-  const pickupPose=!g.reload&&g.flash<=0?Math.sin(g.pickupTime/.45*Math.PI):0;
-  const recoil=g.flash>0?g.flash/.065:0;
-  ctx.save();ctx.rotate(angle+reloadPose*.45+equipPose*.7+(g.swing?(1-g.swing.time/g.swing.duration)*2.2-1.1:0));
-  // Both arms attach to the torso and end on actual gun grips.
-  const gunX=21-recoil*4,gunY=reloadPose*6+equipPose*12;
-  const sleeve=red?'#d8dddd':suit,skin=red?'#dbaf94':'#deb394';
-  line(-4,-14,7,-17,sleeve,11);line(7,-17,gunX-2,gunY+8,skin,8);
-  line(-4,14,8,23,sleeve,11);
-  const reach=reloadPose*22+pickupPose*16;
-  const frontX=gunX+(g.weapon===0?6:27)-reloadPose*11;
-  const frontY=gunY+8+reach;
-  line(8,23,frontX,frontY,skin,8);
-  ctx.save();ctx.translate(gunX,gunY);weaponModel(g.weapon,reach);ctx.restore();
-  ellipse(gunX-1,gunY+9,5,5,'#263a43');ellipse(frontX,frontY,5,5,'#263a43');
-  line(frontX-2,frontY,frontX+2,frontY,'#829ba4',1.5);
-  if(g.flash>0&&!g.reload&&!w.melee){const muzzle=w.muzzle-recoil*4;poly([[muzzle,-7],[muzzle+12,-3],[muzzle+22,0],[muzzle+9,5],[muzzle,8]],'#ffdf98');}
-  if(g.swing){ctx.strokeStyle=w.color;ctx.lineWidth=5;ctx.globalAlpha=g.swing.time/g.swing.duration;ctx.beginPath();ctx.arc(0,0,w.range,-.7,.7);ctx.stroke();ctx.globalAlpha=1;}
-  ctx.restore();
+ const w=weapons[g.weapon],progress=g.reload?Math.min(1,g.reload.elapsed/g.reload.duration):0,reloadPose=g.reload?Math.sin(progress*Math.PI):0,equipPose=Math.max(0,Math.min(1,(g.equipTime||0)/.45)),pickupPose=!g.reload&&g.flash<=0?Math.sin((g.pickupTime||0)/.45*Math.PI):0,recoil=Math.max(0,Math.min(1,(g.flash||0)/.065)),flip=Math.cos(angle)<0?-1:1;
+ const rotation=angle+flip*(reloadPose*.3+equipPose*.45)+(g.swing?(1-g.swing.time/g.swing.duration)*2.2-1.1:0),gunX=21-recoil*4,gunY=reloadPose*6+equipPose*8,reach=reloadPose*16+pickupPose*8;
+ const grip=(x,y)=>({x:x*Math.cos(rotation)-y*flip*Math.sin(rotation),y:x*Math.sin(rotation)+y*flip*Math.cos(rotation)}),rear=grip(gunX-1,gunY+9),front=grip(gunX+(w.melee?12:g.weapon===0?3:22)-reloadPose*8,gunY+8+reach),sleeve=red?'#d8dddd':suit,skin=red?'#dbaf94':'#deb394';
+ // Shoulder anchors stay on the torso; only the gun and hand targets rotate.
+ armJoint({x:-14,y:-15},flip>0?front:rear,-1,sleeve,skin);armJoint({x:14,y:-15},flip>0?rear:front,1,sleeve,skin);
+ ctx.save();ctx.rotate(rotation);ctx.scale(1,flip);ctx.save();ctx.translate(gunX,gunY);weaponModel(g.weapon,reach);ctx.restore();
+ if(g.flash>0&&!g.reload&&!w.melee){const muzzle=w.muzzle-recoil*4;poly([[muzzle,-7],[muzzle+12,-3],[muzzle+22,0],[muzzle+9,5],[muzzle,8]],'#ffdf98');}
+ if(g.swing){ctx.strokeStyle=w.color;ctx.lineWidth=5;ctx.globalAlpha=g.swing.time/g.swing.duration;ctx.beginPath();ctx.arc(0,0,w.range,-.7,.7);ctx.stroke();ctx.globalAlpha=1;}ctx.restore();
+ ellipse(rear.x,rear.y,4,4,'#263a43');ellipse(front.x,front.y,4,4,'#263a43');
   if(g.reload){box(-29,52,58,5,'#192c3b');box(-29,52,58*progress,5,w.color);text('Reload',0,70,'#d3eef2',11);}
   if(g.pickupTime>0){ctx.strokeStyle='#a1e7d8';ctx.lineWidth=2;ctx.globalAlpha=g.pickupTime/.45;ctx.beginPath();ctx.ellipse(0,26,28+(1-g.pickupTime/.45)*20,12,0,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;}
 }

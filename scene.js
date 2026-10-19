@@ -6,7 +6,7 @@ function line(x,y,xx,yy,c,width=3){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.lin
 function poly(points,c,stroke){ctx.fillStyle=c;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}}
 function updateEngineerMotion(dt){const p=g.p;if(!p.motion)p.motion={x:p.x,y:p.y,phase:0,blend:0,lean:0};const m=p.motion,dx=p.x-m.x,dy=p.y-m.y,distance=Math.hypot(dx,dy),moving=distance>.01&&distance<235*dt+5;m.x=p.x;m.y=p.y;if(moving)m.phase+=distance*.055;const ease=1-Math.exp(-dt*14);m.blend+=((moving?Math.min(1,distance/(235*dt||1)):0)-m.blend)*ease;m.lean+=((moving?dx/(235*dt||1)*.075:0)-m.lean)*ease;p.moving=moving;}
 function engineer(x,y,name,phase,angle){
- ctx.save();ctx.translate(x,y);const red=name==='engineer-red',accent=red?'#b84343':'#ed8b32',suit=red?'#a4333d':'#252d36',hair=red?'#39251f':'#c69b50',motion=g.p.motion||{phase:0,blend:0,lean:0},step=Math.sin(motion.phase)*6*motion.blend,bob=-Math.abs(Math.cos(motion.phase))*2*motion.blend;
+ ctx.save();ctx.translate(x,y);ctx.rotate(angle-Math.PI/2);angle=Math.PI/2;const red=name==='engineer-red',accent=red?'#b84343':'#ed8b32',suit=red?'#a4333d':'#252d36',hair=red?'#39251f':'#c69b50',motion=g.p.motion||{phase:0,blend:0,lean:0},step=Math.sin(motion.phase)*6*motion.blend,bob=-Math.abs(Math.cos(motion.phase))*2*motion.blend;
  ellipse(0,35,23,8,'#0008');
  for(const side of [-1,1]){const stride=side*step;line(side*9,12,side*11+stride*.35,27+stride*.35,suit,13);line(side*11+stride*.35,27+stride*.35,side*11+stride*.5,39+stride,suit,11);box(side*11-7+stride*.5,35+stride,17,10,'#111923');}
  ctx.save();ctx.translate(0,bob);ctx.rotate(motion.lean);const aim=angle-motion.lean,back=Math.sin(angle)<-.3;

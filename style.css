@@ -47,3 +47,5 @@ body{background:radial-gradient(ellipse at top,#30202b,#090910 70%)}.brand,.eyeb
 @media(pointer:coarse) and (orientation:portrait){.touch-actions{right:18px;bottom:126px;gap:6px}.touch-pad{bottom:20px}.nexus-actions{max-height:62%}}
 
 @media(pointer:coarse){.touch-pause{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:44px;height:40px;padding:4px;background:#19221d55;border:1px solid #ffffff33;pointer-events:auto;font-size:20px;touch-action:none}}
+
+@media(pointer:coarse){#aim-pad{width:116px;height:116px;border:2px solid #f58c9c99;background:#16152388}#aim-pad .crosshair{display:none}#aim-pad i{width:43px;height:43px;background:#ff557799;border:1px solid #ffc9d3}#aim-pad .aim-label{position:absolute;top:12px;font-size:10px;color:#fff9}#aim-pad.auto-fire{width:92px;height:92px;background:#8a344577;border-color:#ed9aa699}#aim-pad.auto-fire i,#aim-pad.auto-fire .aim-label{display:none}#aim-pad.auto-fire .crosshair{display:block;color:#ffe7dc}#aim-pad.auto-fire:active{background:#ce536699}.touch-actions{right:150px}}

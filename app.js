@@ -568,6 +568,7 @@ function line(x,y,xx,yy,c,width=3){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.lin
 function poly(points,c,stroke){ctx.fillStyle=c;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}}
 function updateEngineerMotion(dt){const p=g.p;if(!p.motion)p.motion={x:p.x,y:p.y,phase:0,blend:0,lean:0};const m=p.motion,dx=p.x-m.x,dy=p.y-m.y,distance=Math.hypot(dx,dy),moving=distance>.01&&distance<235*dt+5;m.x=p.x;m.y=p.y;if(moving)m.phase+=distance*.055;const ease=1-Math.exp(-dt*14);m.blend+=((moving?Math.min(1,distance/(235*dt||1)):0)-m.blend)*ease;m.lean+=((moving?dx/(235*dt||1)*.075:0)-m.lean)*ease;p.moving=moving;}
 function engineer(x,y,name,phase,angle){
+ if(drawEngineer3D(x,y,name,angle))return;
  ctx.save();ctx.translate(x,y);const red=name==='engineer-red',accent=red?'#b84343':'#ed8b32',suit=red?'#a4333d':'#252d36',hair=red?'#39251f':'#c69b50',motion=g.p.motion||{phase:0,blend:0,lean:0},step=Math.sin(motion.phase)*6*motion.blend,bob=-Math.abs(Math.cos(motion.phase))*2*motion.blend;
  const width=.58+.42*Math.abs(Math.sin(angle)),profile=Math.abs(Math.cos(angle));
  ellipse(0,35,23,8,'#0008');ctx.save();ctx.scale(width,1);
@@ -584,6 +585,30 @@ function engineer(x,y,name,phase,angle){
 }
 function robotModel(e){ctx.save();ctx.translate(e.x,e.y);if(e.ranged&&e.winding>0){ctx.save();ctx.rotate(Math.atan2(g.p.y-e.y,g.p.x-e.x));const t=traceWall(e.x,e.y,g.p.x,g.p.y,2),length=dist(e,g.p)*Math.min(1,t);ctx.globalAlpha=.45;line(25,0,length,0,'#ff8099',2);ctx.restore();}if(e.ranged){box(-34,-35,68,12,'#25364a','#70d6ff');ellipse(-23,-29,4,4,'#8de8ff');ellipse(23,-29,4,4,'#8de8ff');ctx.save();ctx.rotate(Math.atan2(g.p.y-e.y,g.p.x-e.x));box(12,-5,43,10,'#263447','#8ee5ff');box(46,-7,14,14,'#50778a');ctx.restore();}let step=Math.sin(g.time*7+e.x*.02)*6;ellipse(0,30,e.boss?65:27,10,'#0008');if(e.boss){ctx.scale(2.1,2.1);for(let side of [-1,1]){for(let i=0;i<3;i++){ctx.save();ctx.translate(side*(15+i*8),-36);ctx.rotate(side*(.3+i*.15));box(-5,-20,10,28,'#49242e','#ad5861');box(-3,-18,6,13,'#ff9847');ctx.restore();}line(side*17,-12,side*38,14,'#3d3242',19);poly([[side*28,-6],[side*44,8],[side*40,24],[side*24,9]],'#dd6b36','#6d3c44');}}for(const side of [-1,1]){line(side*12,7,side*14,28+side*step,'#3a4148',13);box(side*14-8,18+side*step,16,12,'#1b2631','#677584');box(side*14-11,33+side*step,24,10,'#29333c','#687280');poly([[side*14-9,43+side*step],[side*14-6,48+side*step],[side*14-3,43+side*step]],'#abb2b7');}poly([[-28,-29],[28,-29],[30,9],[-30,9]],e.boss?'#302c3e':'#3e454a','#79828c');box(-28,-13,56,5,'#202a33','#596670');for(const side of [-1,1]){poly([[side*15,-9],[side*23,-1],[side*15,7],[side*7,-1]],'#7f283b','#df5960');for(let i=0;i<3;i++)poly([[side*(10+i*7),-29],[side*(13+i*7),-43-i*3],[side*(16+i*7),-29]],'#657078','#242c36');}ellipse(0,-29,13,13,'#1b222a');ellipse(0,-29,9,9,'#a63248');line(-7,-29,7,-29,'#ff7582',1);line(0,-36,0,-22,'#ff7582',1);ellipse(-21,-23,4,4,'#ff5267');ellipse(21,-23,4,4,'#ff5267');ctx.restore();}
 function consoleUnit(x,y,color){box(x-38,y-25,76,50,'#172b3a','#566978');box(x-30,y-18,60,28,'#071b2a',color);for(let i=0;i<4;i++)line(x-24,y-12+i*6,x+8+i*4,y-12+i*6,color,2);for(let i=0;i<5;i++)box(x-25+i*12,y+16,5,3,i%2?'#f6af58':color);}
+
+// Blender-rendered meshes: 16 yaw views, idle, six walk poses and reload.
+const engineerMeshes={};
+function drawEngineer3D(x,y,name,angle){
+ const skin=name==='engineer-red'?'red':'orange';
+ for(const key of [skin,'weapons'])if(!engineerMeshes[key]){const img=new Image();img.src='assets/'+(key==='weapons'?'weapons-3d':'engineer-3d-'+key)+'.png';engineerMeshes[key]=img;}
+ const body=engineerMeshes[skin],gun=engineerMeshes.weapons;
+ if(!body.complete||!body.naturalWidth||!gun.complete||!gun.naturalWidth)return false;
+ const m=g.p.motion||{phase:0,blend:0},tau=Math.PI*2;
+ // Compensate for the orthographic camera's foreshortening on the floor plane.
+ const yaw=Math.atan2(Math.sin(angle)/.52,Math.cos(angle));
+ const direction=((Math.round(yaw/tau*16)%16)+16)%16;
+ const frame=g.reload?7:m.blend>.15?1+Math.floor(((m.phase%tau)+tau)%tau/tau*6):0;
+ const w=weapons[g.weapon],recoil=Math.min(1,(g.flash||0)/.065)*2;
+ ctx.save();ctx.translate(x,y);ellipse(0,38,20,7,'#0006');
+ const drawGun=()=>{ctx.save();const shift=g.reload?5:0;ctx.translate(-Math.cos(angle)*recoil,shift-Math.sin(angle)*recoil);if(g.swing)ctx.rotate(Math.sin(g.swing.time/g.swing.duration*Math.PI)*.45);ctx.drawImage(gun,direction*160,g.weapon*160,160,160,-72,-72,144,144);ctx.restore();};
+ if(Math.sin(angle)<-.2)drawGun();
+ ctx.drawImage(body,direction*160,frame*160,160,160,-72,-72,144,144);
+ if(Math.sin(angle)>=-.2)drawGun();
+ if(g.flash>0&&!g.reload&&!w.melee){const a=direction*tau/16,length=[.8,1.08,1.12,1.29,0,0,.9,1.14,1.19,1.39,0,.92][g.weapon];const mx=Math.cos(a)*length*54,my=Math.sin(a)*length*28-14;ellipse(mx,my,5,4,'#ffe4a0');}
+ if(g.reload){const progress=Math.min(1,g.reload.elapsed/g.reload.duration);box(-24,48,48,4,'#192c3b');box(-24,48,48*progress,4,w.color);}
+ if(g.pickupTime>0){ctx.strokeStyle='#a1e7d8';ctx.lineWidth=2;ctx.globalAlpha=Math.min(1,g.pickupTime/.45);ctx.beginPath();ctx.ellipse(0,38,28+(1-g.pickupTime/.45)*20,10,0,0,tau);ctx.stroke();}
+ ctx.restore();return true;
+}
 
 
 // --- ship-art.js ---

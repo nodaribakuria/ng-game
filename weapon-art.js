@@ -33,8 +33,7 @@ function drawHeldWeapon(angle,red,suit){
  const rotation=angle+flip*(reloadPose*.3+equipPose*.45)+(g.swing?(1-g.swing.time/g.swing.duration)*2.2-1.1:0),gunX=21-recoil*4,gunY=reloadPose*6+equipPose*8,reach=reloadPose*16+pickupPose*8;
  const grip=(x,y)=>({x:x*Math.cos(rotation)-y*flip*Math.sin(rotation),y:x*Math.sin(rotation)+y*flip*Math.cos(rotation)}),rear=grip(gunX-1,gunY+9),front=grip(gunX+(w.melee?12:g.weapon===0?3:22)-reloadPose*8,gunY+8+reach),sleeve=red?'#d8dddd':suit,skin=red?'#dbaf94':'#deb394';
  // Shoulder anchors stay on the torso; only the gun and hand targets rotate.
- const shoulderWidth=.58+.42*Math.abs(Math.sin(angle));
- armJoint({x:-14*shoulderWidth,y:-15},flip>0?front:rear,-1,sleeve,skin);armJoint({x:14*shoulderWidth,y:-15},flip>0?rear:front,1,sleeve,skin);
+ armJoint({x:-14,y:-15},flip>0?front:rear,-1,sleeve,skin);armJoint({x:14,y:-15},flip>0?rear:front,1,sleeve,skin);
  ctx.save();ctx.rotate(rotation);ctx.scale(1,flip);ctx.save();ctx.translate(gunX,gunY);weaponModel(g.weapon,reach);ctx.restore();
  if(g.flash>0&&!g.reload&&!w.melee){const muzzle=w.muzzle-recoil*4;poly([[muzzle,-7],[muzzle+12,-3],[muzzle+22,0],[muzzle+9,5],[muzzle,8]],'#ffdf98');}
  if(g.swing){ctx.strokeStyle=w.color;ctx.lineWidth=5;ctx.globalAlpha=g.swing.time/g.swing.duration;ctx.beginPath();ctx.arc(0,0,w.range,-.7,.7);ctx.stroke();ctx.globalAlpha=1;}ctx.restore();

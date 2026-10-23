@@ -4,7 +4,7 @@ function spawn(boss=false){
   const radius=boss?55:24;
   let point;
   if(boss){
-    const options=rooms.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2}));
+    const options=rooms.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2})).filter(p=>walkable(p.x,p.y,radius));
     point=options.sort((a,b)=>dist(b,g.p)-dist(a,g.p))[0];
   }else{
     const candidates=rooms.map(r=>({x:r.x+120+Math.random()*(r.w-240),y:r.y+100+Math.random()*(r.h-200)}));

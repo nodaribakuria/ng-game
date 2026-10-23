@@ -4,6 +4,7 @@ function update(dt){if(g.stage==='training'){updateTraining(dt);return;}
  let dx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),dy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));
  const length=Math.hypot(dx,dy)||1,old={x:g.p.x,y:g.p.y};moveActor(g.p,dx/length*235*dt,dy/length*235*dt,20);g.p.vx=(g.p.x-old.x)/dt;g.p.vy=(g.p.y-old.y)/dt;g.p.moving=!!(dx||dy);
  camera.x=Math.max(0,Math.min(WORLD.w-W,g.p.x-W/2));camera.y=Math.max(0,Math.min(WORLD.h-H,g.p.y-H/2));if(mouse.sx!==undefined){mouse.x=mouse.sx+camera.x;mouse.y=mouse.sy+camera.y;}updateCombat(dt);
+ updateVexa(dt);if(mode!=='playing')return;
  if(g.stage==='survival')updateSurvival(dt);
  if(g.stage!=='survival'&&g.stage!=='planet'&&!g.remaining&&!g.enemies.length){g.next-=dt;if(g.next<=0){if(g.wave<5){g.wave++;g.remaining=4+g.wave*2;g.spawn=0;toast('WAVE '+g.wave);}else if(!g.bossSpawned&&g.systems.every(s=>s.progress>=100)){g.wave=6;g.bossSpawned=true;spawn(true);toast('ARCHON HAS ARRIVED');}}}
  if(g.stage!=='survival'&&g.stage!=='planet'&&g.remaining>0){g.spawn-=dt;if(g.spawn<=0){spawn();g.remaining--;g.spawn=1.2;}}

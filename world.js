@@ -144,7 +144,7 @@ function updateProjectiles(dt,difficulty){
     if(wallT!==Infinity&&wallT<=hitT){b.x=ax+(bx-ax)*wallT;b.y=ay+(by-ay)*wallT;b.life=0;burst(b.x,b.y,'#91b5cd',3);}
     else if(victim){
       b.x=ax+(bx-ax)*hitT;b.y=ay+(by-ay)*hitT;b.life=0;
-      if(b.enemy){victim.hp-=(b.damage||12)*difficulty;victim.inv=.45;g.shake=6;}else victim.hp-=b.damage;
+      if(b.enemy){victim.hp-=(b.damage||12)*difficulty;victim.inv=.45;g.shake=6;}else hitEnemy(victim,b.damage);
       burst(b.x,b.y,b.enemy?'#ff7182':'#ffbd77',5);
     }else{b.x=bx;b.y=by;b.life-=dt;}
   }

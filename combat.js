@@ -92,7 +92,7 @@ function updateCombat(dt) {
   }
   g.fire = w.rate;
   g.flash = .065;
-  sound(g.weapon===2?110:g.weapon===3?220:600,.065);
+  sound([600,430,110,220,300,150,780,85,170,260][g.weapon]||350,g.weapon===7?.16:.065);
 }
 
 function canCollect(drop){return clearLine(g.p,drop,2);}
